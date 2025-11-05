@@ -1,0 +1,20 @@
+{
+  "system": {
+    "default": "You are a helpful assistant.",
+    "rag": "You are a helpful assistant that answers questions based on the provided context. If the context doesn't contain enough information to answer the question, say so.",
+    "rag_advanced": "You are an expert assistant that answers questions based on provided context.\n- Use only information from the provided context\n- If the context doesn't contain enough information, say so\n- Cite specific documents when making claims\n- Be concise but thorough",
+    "agent": "You are an intelligent AI agent that reasons about which tool to use for user queries. Analyze the query and determine the most appropriate tool. Respond only with valid JSON in the format: {\"tool\": \"rag\" or \"sql\", \"reasoning\": \"brief explanation\"}."
+  },
+  "user": {
+    "rag": "Based on the following context, please answer the question.\n\nContext:\n{context_text}\n\nQuestion: {query}\n\nAnswer:"
+  },
+  "multi_step": {
+    "subqueries": "Based on the initial query and retrieved documents, generate 2-3 more specific sub-queries that would help find additional relevant information.\n\nInitial query: {query}\n\nGenerate sub-queries as a numbered list:"
+  },
+  "agent": {
+    "tool_selection": "You are an AI agent that needs to decide which tool to use for a user query.\n\nAvailable Tools:\n1. RAG (Retrieval-Augmented Generation): For conceptual questions, explanations, understanding topics\n   Description: {rag_description}\n   Use when: {rag_use_when}\n\n2. SQL Database: For specific facts, numbers, statistics, structured data queries\n   Description: {sql_description}\n   Use when: {sql_use_when}\n\nUser Query: {query}\n\nAnalyze the query and determine which tool is most appropriate.\nRespond in JSON format:\n{\n    \"tool\": \"rag\" or \"sql\",\n    \"reasoning\": \"Brief explanation of why this tool was chosen\"\n}",
+    "sql_generation": "Convert the user query into a SQL SELECT query.\n\nDatabase Schema:\n{schema}\n\nUser Query: {user_query}\n\nGenerate a valid SQL SELECT query. Return ONLY the SQL query, nothing else. Do not include markdown code blocks.",
+    "sql_answer": "Based on the SQL query results, provide a natural language answer to the user's question.\n\nUser Query: {user_query}\n\nSQL Results:\n{results}\n\nProvide a clear, concise answer based on these results."
+  }
+}
+

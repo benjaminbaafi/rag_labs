@@ -1,0 +1,17 @@
+# RAG Labs - Python Dependencies
+# For educational labs teaching RAG with Azure AI Search
+
+# OpenAI SDK
+openai>=2.7.1
+
+# Azure SDKs
+azure-ai-textanalytics>=5.3.0
+azure-search-documents>=11.4.0
+azure-identity>=1.15.0
+
+# Utilities
+python-dotenv>=1.0.0
+tiktoken>=0.5.0
+pydantic>=2.0.0
+pydantic-settings>=2.0.0
+

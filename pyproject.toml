@@ -1,0 +1,16 @@
+[project]
+name = "rag-labs"
+version = "0.1.0"
+description = "Educational RAG labs using Azure AI Search and OpenAI"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "openai>=2.7.1",
+    "azure-ai-textanalytics>=5.3.0",
+    "azure-search-documents>=11.4.0",
+    "azure-identity>=1.15.0",
+    "python-dotenv>=1.0.0",
+    "tiktoken>=0.5.0",
+    "pydantic>=2.0.0",
+    "pydantic-settings>=2.0.0",
+]
