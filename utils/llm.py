@@ -171,6 +171,7 @@ Answer:"""
             search_results=search_results
         )
         
+        
         response.add_metadata("top_k", request.top_k)
         response.add_metadata("search_type", request.search_type)
         response.add_metadata("temperature", request.temperature)
