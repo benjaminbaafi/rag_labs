@@ -9,7 +9,12 @@ from models.search import SearchResult, SearchResponse, Document
 
 class AzureSearchClient:
     """Wrapper for Azure AI Search operations."""
-    
+
+    ID_FIELD = "chunk_id"
+    TITLE_FIELD = "title"
+    CONTENT_FIELD = "chunk"
+    VECTOR_FIELD = "text_vector"
+
     def __init__(self):
         """Initialize Azure AI Search client."""
         cfg = config.get_config()
@@ -39,11 +44,14 @@ class AzureSearchClient:
             top=top,
             include_total_count=True
         )
-        
+
+        raw_results = [dict(result) for result in results]
+        normalized_results = [self._normalize_result_dict(result) for result in raw_results]
+
         if use_pydantic:
-            search_results = self._convert_to_search_results(list(results), query, "keyword")
+            search_results = self._convert_to_search_results(normalized_results, query, "keyword")
             return search_results
-        return [dict(result) for result in results]
+        return normalized_results
     
     def search_semantic(
         self, 
@@ -75,16 +83,19 @@ class AzureSearchClient:
             include_total_count=True
         )
         
+        raw_results = [dict(result) for result in results]
+        normalized_results = [self._normalize_result_dict(result) for result in raw_results]
+
         if use_pydantic:
-            search_results = self._convert_to_search_results(list(results), query, "semantic")
+            search_results = self._convert_to_search_results(normalized_results, query, "semantic")
             return search_results
-        return [dict(result) for result in results]
+        return normalized_results
     
     def search_vector(
         self, 
         vector: List[float], 
         top: int = 5,
-        fields: str = "content_vector"  # Changed from "contentVector" to match index
+        fields: str = VECTOR_FIELD
     ) -> List[Dict[str, Any]]:
         """
         Perform vector similarity search.
@@ -108,14 +119,15 @@ class AzureSearchClient:
             vector_queries=[vector_query],
             top=top
         )
-        return [dict(result) for result in results]
+        raw_results = [dict(result) for result in results]
+        return [self._normalize_result_dict(result) for result in raw_results]
     
     def search_hybrid(
         self,
         query: str,
         vector: Optional[List[float]] = None,
         top: int = 5,
-        vector_fields: str = "content_vector"  # Changed from "contentVector" to match index
+        vector_fields: str = VECTOR_FIELD
     ) -> List[Dict[str, Any]]:
         """
         Perform hybrid search (keyword + vector).
@@ -146,7 +158,8 @@ class AzureSearchClient:
             query_type="semantic" if not vector_queries else None,
             semantic_configuration_name="default" if not vector_queries else None
         )
-        return [dict(result) for result in results]
+        raw_results = [dict(result) for result in results]
+        return [self._normalize_result_dict(result) for result in raw_results]
     
     def upload_documents(self, documents: List[Dict[str, Any]]):
         """
@@ -174,11 +187,11 @@ class AzureSearchClient:
             reranker_score = result_dict.get("@search.reranker_score")
             
             # Extract document fields
-            doc_id = result_dict.get("id", "")
-            doc_content = result_dict.get("content", result_dict.get("text", ""))
-            doc_title = result_dict.get("title")
+            doc_id = result_dict.get("id", result_dict.get(self.ID_FIELD, ""))
+            doc_content = result_dict.get("content", result_dict.get(self.CONTENT_FIELD, result_dict.get("text", "")))
+            doc_title = result_dict.get("title", result_dict.get(self.TITLE_FIELD))
             doc_category = result_dict.get("category")
-            doc_vector = result_dict.get("contentVector")
+            doc_vector = result_dict.get("contentVector", result_dict.get("content_vector", result_dict.get(self.VECTOR_FIELD)))
             
             # Create Document
             document = Document(
@@ -188,7 +201,21 @@ class AzureSearchClient:
                 category=doc_category,
                 content_vector=doc_vector,
                 metadata={k: v for k, v in result_dict.items() 
-                         if k not in ["id", "title", "content", "text", "category", "contentVector", "content_vector", "@search.score", "@search.reranker_score"]}
+                         if k not in [
+                             "id",
+                             self.ID_FIELD,
+                             "title",
+                             self.TITLE_FIELD,
+                             "content",
+                             self.CONTENT_FIELD,
+                             "text",
+                             "category",
+                             "contentVector",
+                             "content_vector",
+                             self.VECTOR_FIELD,
+                             "@search.score",
+                             "@search.reranker_score"
+                         ]}
             )
             
             # Create SearchResult
@@ -211,4 +238,28 @@ class AzureSearchClient:
             query=query,
             search_type=search_type
         )
+
+    def _normalize_result_dict(self, result_dict: Dict[str, Any]) -> Dict[str, Any]:
+        """Normalize raw Azure Search result to expected field names."""
+        normalized = dict(result_dict)
+
+        if self.ID_FIELD in result_dict:
+            normalized.setdefault("id", result_dict[self.ID_FIELD])
+        else:
+            normalized.setdefault("id", result_dict.get("id", ""))
+
+        content_value = result_dict.get(self.CONTENT_FIELD)
+        if content_value is None:
+            content_value = result_dict.get("content", result_dict.get("text", ""))
+        normalized["content"] = content_value
+
+        if self.TITLE_FIELD in result_dict and "title" not in normalized:
+            normalized["title"] = result_dict[self.TITLE_FIELD]
+
+        vector_value = result_dict.get(self.VECTOR_FIELD)
+        if vector_value is not None:
+            normalized.setdefault("contentVector", vector_value)
+            normalized.setdefault("content_vector", vector_value)
+
+        return normalized
 
